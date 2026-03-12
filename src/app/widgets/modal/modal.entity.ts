@@ -1,24 +1,26 @@
-import { Content, DataType, DefaultValue, DisplayName, WidgetEntity } from '@progress/sitefinity-widget-designers-sdk';
+import { SdkItem } from '@progress/sitefinity-nextjs-sdk/rest-sdk';
+import { Content, ContentSection, DataModel, DataType, DefaultValue, DisplayName, KnownFieldTypes, LinkModel, MediaItem, SdkItemModel, WidgetEntity } from '@progress/sitefinity-widget-designers-sdk';
 
 @WidgetEntity('ModalWidget', 'ModalDialog')
 export class ModalEntity {
 
-    @DataType('linkSelector')
+  
+   @ContentSection(1)
     @DisplayName('Enlace o pagina')
-    @DefaultValue('')
-    link?: any = '';
-    @Content({ Type: 'Telerik.Sitefinity.Libraries.Model.Image', AllowMultipleItemsSelection: false })
-    @DisplayName('Elegir imagen')
-    ImgModal: any;
+    @DataType(KnownFieldTypes.LinkSelector)
+    LinkButton: LinkModel | null = null; 
 
+    
+    @ContentSection(2)
+    @MediaItem('images', false, false)
+    @DataType('media')
+    @DisplayName('Elegir imagen')
+    @DataModel(SdkItemModel)
+    Image?: SdkItem | null = null;
+
+ 
+     @ContentSection(3)
     @DefaultValue("Descubre más en E-learning.com")
     Content: string = "";
-    @DisplayName('Mostrar segundo boton')
-    SecondaryBtn: boolean = true;
-    BtnCancelText: string = "";
-    @DisplayName('Mostrar primer boton')
-    PrimaryBtn: boolean = true;
-
-      @DefaultValue("Ver más")
-    BtnActionText: string = "";
+ 
 }

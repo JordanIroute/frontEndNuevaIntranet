@@ -3,52 +3,52 @@ import { htmlAttributes, WidgetContext } from "@progress/sitefinity-nextjs-sdk";
 import React, { useEffect, useState, useRef } from "react";
 import { ModalEntity } from "./modal.entity";
 import "./modal.css";
+import { ImageItem,RestClient,RestSdkTypes } from '@progress/sitefinity-nextjs-sdk/rest-sdk';
 
 export function ModalWidget(props: WidgetContext<ModalEntity>) {
     let dataAttributes = htmlAttributes(props);
-    const [images, setImages] = useState<any[]>([]);
-    const [show, setShow] = useState(false);
-    const hasInitialized = useRef(false);
-
+    const {LinkButton,Content,Image} = props.model?.Properties ;
+    const [images, setImages] = useState<ImageItem | null>(null);
+    const [show, setShow] = useState(true);
+    
+    const { isEdit } = props.requestContext;
     const handleClose = () => setShow(false);
-
-    const link = props.model?.Properties.link.href;
-    const content = props.model.Properties.Content;
-    const btnActionText = props.model.Properties.BtnActionText;
-
+ 
     const fetchContent = async () => {
         try {
-            let imageIds = [];
-            imageIds.push(props.model?.Properties.ImgModal?.ItemIdsOrdered || []);
-
-            const imageRequests = imageIds.map((id: string) =>
-                fetch(`/api/default/images(${id})/Default.GetItemWithFallback()?sf_culture=en&sf_provider=OpenAccessDataProvider&sf_fallback_prop_names=*&$select=*`)
-                    .then((response) => response.json())
-            );
-
-            const imagesData = await Promise.all(imageRequests);
-            setImages(imagesData);
-        } catch (error) {
+            let imagen:ImageItem | null = null;
+            if (Image?.Id){
+                    try {
+                                imagen = await RestClient.getItemWithFallback<ImageItem>({
+                                type: RestSdkTypes.Image,
+                                id: Image.Id.toString()
+                            });
+                        } catch (error) {
+                            console.warn('Error loading image:', error);
+                        }
+                    }
+                    setImages(imagen);
+                } catch (error) {
             console.error('Error fetching items:', error);
         }
     };
-
+     
     useEffect(() => {
-        const hasSeenModal = document.cookie.includes("modalShown=true");
-
-        if (!hasSeenModal && !hasInitialized.current) {
+        // 1. Manejo del modal
+        if (isEdit) {
+            setShow(false);
+        } else {
             setShow(true);
-            document.cookie = "modalShown=true; path=/";
-            hasInitialized.current = true;
         }
+    }, [isEdit]);
 
-        fetchContent();
-    }, []);
+    useEffect(() => { fetchContent();  }, []);
 
-    if (!show) return null;
+    const isClassOverlay = isEdit ? "" : "custom-modal-overlay";
+    if (!show  && !isEdit) return null;
 
     return (
-        <div className="custom-modal-overlay" {...dataAttributes}>
+        <div className={isClassOverlay}{...dataAttributes}>
             <div className="custom-modal-container">
                 <button
                     className="custom-modal-close-btn"
@@ -63,24 +63,27 @@ export function ModalWidget(props: WidgetContext<ModalEntity>) {
                 <div className="custom-modal-content">
                     <div className="custom-modal-image-wrapper">
                         <img
-                            src={images[0]?.Url}
-                            alt="Modal content"
+                            src={images?.Url}
+                            alt={images?.Title || 'Imagen del modal'}
                             className="custom-modal-image"
                         />
+
                     </div>
 
                     <div className="custom-modal-body">
-                        <a
-                            href={link}
-                            className="custom-modal-btn"
-                            onClick={handleClose}
-                        >
-                            {btnActionText || "Ver más"}
-                        </a>
-                        <p className="custom-modal-text">
-                            {content}
-                        </p>
+                        {LinkButton?.href && (
+                            <a
+                                href={LinkButton?.href}
+                                className="custom-modal-btn"
+                                target={LinkButton?.target || '_self'}
+                                rel={LinkButton?.target === '_blank' ? 'noopener noreferrer' : undefined}
+                                onClick={handleClose} >
+                                {LinkButton?.text || "Ver más"}
+                            </a>
+                        )}
 
+                        {Content &&( <p className="custom-modal-text"> {Content} </p>  )}
+                          
                     </div>
 
 
